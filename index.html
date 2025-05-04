@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dynamic Folder Carousel</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    .carousel,
+    .carousel-inner,
+    .carousel-item {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .carousel-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background-color: black;
+    }
+
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+      filter: brightness(1000%);
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .navbar {
+      position: absolute;
+      top: 0;
+      width: 100%;
+      z-index: 10;
+    }
+
+    .navbar .btn {
+      margin-left: 10px;
+    }
+
+    .end-slide {
+      background-color: black;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      font-weight: bold;
+      height: 100%;
+      width: 100%;
+      text-align: center;
+    }
+
+    .carousel-controls {
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Harish ❤ Rekha</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarNav" aria-controls="navbarNav"
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link active folder-link" data-folder="header" href="#">Home</a></li>
+        <li class="nav-item"><a class="nav-link folder-link" data-folder="family" href="#">Family</a></li>
+        <li class="nav-item"><a class="nav-link folder-link" data-folder="celebration" href="#">Celebration</a></li>
+        <li class="nav-item"><a class="nav-link folder-link" data-folder="relative" href="#">Relative</a></li>
+        <li class="nav-item">
+          <button id="autoToggle" class="btn btn-warning">Auto Start</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Carousel -->
+<div id="fullScreenCarousel" class="carousel slide" data-bs-ride="false">
+  <div class="carousel-inner"></div>
+
+  <!-- Controls -->
+  <div class="carousel-controls">
+    <button class="carousel-control-prev" type="button" data-bs-target="#fullScreenCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    </button>
+    <button id="nextBtn" class="carousel-control-next" type="button" data-bs-target="#fullScreenCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    </button>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  const imageExtension = '.JPG';
+  const folderImageCounts = {
+    'header': 62,
+    'family': 9,
+    'celebration': 10,
+    'relative': 55
+  };
+
+  let autoSlide = false;
+  let interval;
+
+  function loadImages(folderName) {
+    const imageCount = folderImageCounts[folderName] || 0;
+    const $carouselInner = $('.carousel-inner');
+    $carouselInner.empty();
+
+    for (let i = 1; i <= imageCount; i++) {
+      const imagePath = `./images/${folderName}/image${i}${imageExtension}`;
+      const activeClass = i === 1 ? 'active' : '';
+      $carouselInner.append(`
+        <div class="carousel-item ${activeClass}">
+          <img src="${imagePath}" alt="Slide ${i}">
+        </div>
+      `);
+    }
+
+    // Add special END slide
+    $carouselInner.append(`
+      <div class="carousel-item">
+        <div class="end-slide">🎉 You’ve reached the end!<br>Click “Previous” to go back.</div>
+      </div>
+    `);
+
+    $('#fullScreenCarousel').carousel(0);
+    updateControls(0);
+  }
+
+  function updateControls(index) {
+    const totalItems = $('.carousel-item').length;
+    if (index === totalItems - 1) {
+      $('#nextBtn').hide();
+    } else {
+      $('#nextBtn').show();
+    }
+  }
+
+  $(document).ready(function () {
+    loadImages('header');
+
+    $('.folder-link').click(function (e) {
+      e.preventDefault();
+      const folder = $(this).data('folder');
+      loadImages(folder);
+      clearInterval(interval);
+      $('#autoToggle').text('Auto Start');
+      autoSlide = false;
+      $('.carousel-controls').removeClass('d-none');
+    });
+
+    $('#autoToggle').click(function () {
+      autoSlide = !autoSlide;
+      if (autoSlide) {
+        $(this).text('Auto Stop');
+        $('.carousel-controls').addClass('d-none');
+        interval = setInterval(() => {
+          const $carousel = $('#fullScreenCarousel');
+          const index = $carousel.find('.carousel-item.active').index();
+          const total = $carousel.find('.carousel-item').length;
+
+          if (index < total - 1) {
+            $carousel.carousel('next');
+          } else {
+            clearInterval(interval);
+            $('#autoToggle').text('Auto Start');
+            $('.carousel-controls').removeClass('d-none');
+            autoSlide = false;
+          }
+        }, 3000);
+      } else {
+        $(this).text('Auto Start');
+        $('.carousel-controls').removeClass('d-none');
+        clearInterval(interval);
+      }
+    });
+
+    $('#fullScreenCarousel').on('slid.bs.carousel', function () {
+      const index = $(this).find('.carousel-item.active').index();
+      updateControls(index);
+    });
+  });
+</script>
+
+</body>
+</html>
